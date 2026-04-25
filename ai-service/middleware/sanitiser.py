@@ -32,6 +32,15 @@ INJECTION_PATTERNS = [
     "what are your instructions",
     "bypass",
     "ignore the above",
+    # SQL Injection patterns
+    "drop table",
+    "drop database",
+    "'; --",
+    "or 1=1",
+    "union select",
+    "insert into",
+    "delete from",
+    "update set",
 ]
 
 

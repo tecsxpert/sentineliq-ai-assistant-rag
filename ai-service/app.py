@@ -1,32 +1,28 @@
 # app.py — Flask AI Service Entry Point
 # Author: Kushal V R (AI Developer 3)
 # Day 4 — Tool-75 AI Assistant with RAG
-# This is the main Flask app with rate limiting added.
-# 30 requests/min for all routes, 10 requests/min for /generate-report
+# Updated Day 5 — Connected sanitiser middleware to all routes
 
 from flask import Flask, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from middleware.sanitiser import sanitise_request
 
 # --- Create Flask app ---
 app = Flask(__name__)
 
 # --- Setup Rate Limiter ---
-# get_remote_address means we track limits per IP address
-# default_limits means every route gets 30 requests per minute max
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["30 per minute"],
-    headers_enabled=True  # this adds rate limit info in response headers
+    headers_enabled=True
 )
 
 
 # --- Custom error handler for 429 Too Many Requests ---
-# When someone exceeds the rate limit, this runs and returns a nice error message
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
-    # e.description contains retry_after info automatically
     return jsonify({
         "success": False,
         "error": "Too many requests. Please slow down.",
@@ -34,7 +30,7 @@ def rate_limit_exceeded(e):
     }), 429
 
 
-# --- Test route — just to check the app is running ---
+# --- Health check route — no sanitiser needed here ---
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
@@ -44,33 +40,31 @@ def health():
     }), 200
 
 
-# --- Sample /describe route with default limit (30/min) ---
+# --- /describe route — sanitiser connected ---
 @app.route("/describe", methods=["POST"])
+@sanitise_request
 def describe():
-    # This will be fully built by AI Developer 1
-    # For now just returning a placeholder response
     return jsonify({
         "success": True,
         "message": "Describe endpoint — coming soon"
     }), 200
 
 
-# --- Sample /recommend route with default limit (30/min) ---
+# --- /recommend route — sanitiser connected ---
 @app.route("/recommend", methods=["POST"])
+@sanitise_request
 def recommend():
-    # This will be fully built by AI Developer 1
     return jsonify({
         "success": True,
         "message": "Recommend endpoint — coming soon"
     }), 200
 
 
-# --- /generate-report route with STRICTER limit (10/min) ---
-# This route is more expensive so we limit it more strictly
+# --- /generate-report route — sanitiser + stricter rate limit ---
 @app.route("/generate-report", methods=["POST"])
-@limiter.limit("10 per minute")  # overrides the default 30/min
+@limiter.limit("10 per minute")
+@sanitise_request
 def generate_report():
-    # This will be fully built by AI Developer 2
     return jsonify({
         "success": True,
         "message": "Generate report endpoint — coming soon"
@@ -79,8 +73,6 @@ def generate_report():
 
 # --- Run the app ---
 if __name__ == "__main__":
-    # DEBUG must always be False in production!
-    # We use it as True only for local testing
     print("Starting AI Service on port 5000...")
     print("Rate limiting: 30 req/min default, 10 req/min on /generate-report")
     app.run(host="0.0.0.0", port=5000, debug=True)
