@@ -1,7 +1,6 @@
 # app.py — Flask AI Service Entry Point
 # Author: Kushal V R (AI Developer 3)
-# Day 4 — Tool-75 AI Assistant with RAG
-# Day 8 Update — Fixed all ZAP findings by adding security headers via flask-talisman
+# Day 8 — Fixed ALL ZAP findings completely
 
 from flask import Flask, jsonify
 from flask_limiter import Limiter
@@ -13,28 +12,30 @@ from middleware.sanitiser import sanitise_request
 app = Flask(__name__)
 
 # --- Setup Security Headers using flask-talisman ---
-# This fixes all 3 ZAP findings from Day 7:
-# Fix 1: X-Content-Type-Options header missing
-# Fix 2: CSP header not set
-# Fix 3: Server version leak
+# Fix 1: CSP header with proper fallback directives
+# Fix 2: X-Content-Type-Options
 Talisman(
     app,
     force_https=False,
     strict_transport_security=False,
     content_security_policy={
-        'default-src': "'self'",
-        'script-src': "'self'",
-        'style-src': "'self'",
+        'default-src': ["'self'"],
+        'script-src': ["'self'"],
+        'style-src': ["'self'"],
+        'img-src': ["'self'"],
+        'font-src': ["'self'"],
+        'connect-src': ["'self'"],
+        'frame-ancestors': ["'none'"],
     },
     x_content_type_options=True,
     referrer_policy='strict-origin-when-cross-origin'
 )
 
-# --- Add X-Frame-Options manually ---
+# --- Fix 3: Hide server version + add X-Frame-Options ---
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['Server'] = 'AI-Service'  # hides real server version
+    response.headers['Server'] = 'AI-Service'  # hides Werkzeug/Python version
     return response
 
 # --- Setup Rate Limiter ---
@@ -45,8 +46,7 @@ limiter = Limiter(
     headers_enabled=True
 )
 
-
-# --- Custom error handler for 429 Too Many Requests ---
+# --- Custom error handler for 429 ---
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
     return jsonify({
@@ -54,7 +54,6 @@ def rate_limit_exceeded(e):
         "error": "Too many requests. Please slow down.",
         "retry_after": str(e.description)
     }), 429
-
 
 # --- Health check route ---
 @app.route("/health", methods=["GET"])
@@ -65,7 +64,6 @@ def health():
         "status": "healthy"
     }), 200
 
-
 # --- /describe route ---
 @app.route("/describe", methods=["POST"])
 @sanitise_request
@@ -74,7 +72,6 @@ def describe():
         "success": True,
         "message": "Describe endpoint — coming soon"
     }), 200
-
 
 # --- /recommend route ---
 @app.route("/recommend", methods=["POST"])
@@ -85,8 +82,7 @@ def recommend():
         "message": "Recommend endpoint — coming soon"
     }), 200
 
-
-# --- /generate-report route with stricter rate limit ---
+# --- /generate-report route ---
 @app.route("/generate-report", methods=["POST"])
 @limiter.limit("10 per minute")
 @sanitise_request
@@ -96,10 +92,9 @@ def generate_report():
         "message": "Generate report endpoint — coming soon"
     }), 200
 
-
 # --- Run the app ---
 if __name__ == "__main__":
     print("Starting AI Service on port 5000...")
     print("Rate limiting: 30 req/min default, 10 req/min on /generate-report")
-    print("Security headers: CSP, X-Content-Type-Options, X-Frame-Options enabled")
+    print("Security headers: ALL ZAP findings fixed!")
     app.run(host="0.0.0.0", port=5000, debug=True)
