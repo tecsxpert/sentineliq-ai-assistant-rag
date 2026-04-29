@@ -1,41 +1,30 @@
 package com.internship.tool.controller;
 
-import com.internship.tool.entity.Record;
-import com.internship.tool.service.RecordService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/records")
+@RequestMapping("/records")
 public class RecordController {
 
-    @Autowired
-    private RecordService service;
+    // ADMIN only
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/create")
+    public String create() {
+        return "Created";
+    }
 
-    // 1. UPDATE
+    // ADMIN + MANAGER
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Record record) {
-        Record updated = service.update(id, record);
-        return ResponseEntity.ok(updated);
+    public String update(@PathVariable Long id) {
+        return "Updated " + id;
     }
 
-    // 2. DELETE (SOFT DELETE)
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        service.softDelete(id);
-        return ResponseEntity.ok("Deleted successfully");
-    }
-
-    // 3. SEARCH
-    @GetMapping("/search")
-    public ResponseEntity<?> search(@RequestParam String q) {
-        return ResponseEntity.ok(service.search(q));
-    }
-
-    // 4. STATS
-    @GetMapping("/stats")
-    public ResponseEntity<?> stats() {
-        return ResponseEntity.ok(service.getStats());
+    // ALL roles
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','VIEWER')")
+    @GetMapping("/all")
+    public String getAll() {
+        return "All records";
     }
 }

@@ -13,14 +13,13 @@ public class User {
 
     private String username;
 
-    // 🔐 Accept in request, hide in response
+    // 🔐 Hide in response
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    private String role; // VIEWER
+    private String role; // ROLE_ADMIN / ROLE_MANAGER / ROLE_VIEWER
 
-    // ✅ GETTERS & SETTERS
-
+    // GETTERS & SETTERS
     public Long getId() {
         return id;
     }

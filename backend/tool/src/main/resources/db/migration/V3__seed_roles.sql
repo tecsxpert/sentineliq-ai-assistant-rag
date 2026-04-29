@@ -1,0 +1,5 @@
+INSERT INTO users (username, password, role)
+VALUES 
+('admin', '$2a$10$1234567890123456789012', 'ROLE_ADMIN'),
+('manager', '$2a$10$1234567890123456789012', 'ROLE_MANAGER'),
+('viewer', '$2a$10$1234567890123456789012', 'ROLE_VIEWER');
