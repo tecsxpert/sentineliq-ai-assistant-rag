@@ -12,44 +12,46 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableMethodSecurity   // ✅ Enables @PreAuthorize
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-            // ❌ Disable CSRF (for testing APIs)
-            .csrf(csrf -> csrf.disable())
+                // ✅ Disable CSRF
+                .csrf(csrf -> csrf.disable())
 
-            // 🔐 Authorization rules
-            .authorizeHttpRequests(auth -> auth
+                // ✅ Authorization
+                .authorizeHttpRequests(auth -> auth
 
-                // ✅ Public APIs (NO LOGIN REQUIRED)
-                .requestMatchers(
-                        "/auth/**",
-                        "/h2-console/**",
-                        "/test/public"
-                ).permitAll()
+                        // ✅ PUBLIC APIs
+                        .requestMatchers(
+                                "/auth/**",
+                                "/h2-console/**",
+                                "/test/public",
+                                "/records/**"
+                        ).permitAll()
 
-                // 🔐 ROLE BASED ACCESS
-                .requestMatchers("/test/admin").hasRole("ADMIN")
-                .requestMatchers("/test/manager").hasAnyRole("MANAGER", "ADMIN")
-                .requestMatchers("/test/viewer").hasAnyRole("VIEWER", "MANAGER", "ADMIN")
+                        // ✅ ROLE BASED TESTING
+                        .requestMatchers("/test/admin").hasRole("ADMIN")
+                        .requestMatchers("/test/manager").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/test/viewer").hasAnyRole("VIEWER", "MANAGER", "ADMIN")
 
-                // 🔒 Everything else needs login
-                .anyRequest().authenticated()
-            )
+                        // ✅ Allow everything else
+                        .anyRequest().permitAll()
+                )
 
-            // ✅ H2 Console fix (very important)
-            .headers(headers -> headers
-                    .frameOptions(frame -> frame.disable())
-            );
+                // ✅ H2 Console Fix
+                .headers(headers ->
+                        headers.frameOptions(frame ->
+                                frame.disable()
+                        )
+                );
 
         return http.build();
     }
 
-    // 🔐 Password Encoder (BCrypt)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

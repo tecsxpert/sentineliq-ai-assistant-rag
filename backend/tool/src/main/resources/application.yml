@@ -1,4 +1,5 @@
 spring:
+
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
@@ -7,7 +8,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update   # ✅ FIX
+      ddl-auto: update
 
   flyway:
     enabled: true
@@ -15,3 +16,17 @@ spring:
   h2:
     console:
       enabled: true
+
+  # ✅ EMAIL CONFIGURATION
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ganabs0819@gmail.com
+    password: jnmh kaht jrrx kaqb
+
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
