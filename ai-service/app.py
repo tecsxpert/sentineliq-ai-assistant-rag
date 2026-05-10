@@ -1,10 +1,11 @@
 # app.py — Flask AI Service Entry Point
 # Author: Poshitha A Kundar (AI Developer 1)
 # Project: Tool-75 — SentinelIQ AI Assistant with RAG
-# Day 2 — Added Groq API integration for /describe endpoint
+# Day 3 — Added input sanitisation middleware
 
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
+from middleware.sanitiser import sanitise_request
 
 # Load environment variables
 load_dotenv()
@@ -16,10 +17,7 @@ app = Flask(__name__)
 # --- Health check route ---
 @app.route("/health", methods=["GET"])
 def health():
-    """
-    Health check endpoint.
-    Returns 200 if the AI service is running properly.
-    """
+    """Health check endpoint."""
     return jsonify({
         "success": True,
         "message": "AI service is running",
@@ -41,22 +39,19 @@ def root():
     }), 200
 
 
-# --- /describe route — Now connected to Groq API ---
+# --- /describe route — Groq API + Sanitisation ---
 @app.route("/describe", methods=["POST"])
+@sanitise_request
 def describe():
     """
-    Describe endpoint — sends user input to Groq LLaMA-3.3-70b
-    and returns AI-generated risk description.
-
-    Request body: {"input": "describe the risk..."}
+    Describe endpoint — sanitised input sent to Groq LLaMA-3.3-70b.
+    Returns AI-generated risk description.
     """
     from services.groq_client import get_groq_client
 
     data = request.get_json()
-    if not data:
-        return jsonify({"success": False, "error": "No JSON data provided"}), 400
-
     user_input = data.get("input") or data.get("query") or data.get("message")
+
     if not user_input:
         return jsonify({"success": False, "error": "No input provided"}), 400
 
@@ -82,32 +77,28 @@ Be concise but thorough. Use professional language suitable for risk reports."""
                 "tokens_used": result["tokens_used"]
             }), 200
         else:
-            return jsonify({
-                "success": False,
-                "error": result["error"]
-            }), 500
+            return jsonify({"success": False, "error": result["error"]}), 500
 
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": f"Service error: {str(e)}"
-        }), 500
+        return jsonify({"success": False, "error": f"Service error: {str(e)}"}), 500
 
 
-# --- Placeholder: /recommend route ---
+# --- /recommend route (placeholder) ---
 @app.route("/recommend", methods=["POST"])
+@sanitise_request
 def recommend():
-    """Recommend endpoint — will use RAG pipeline in Day 7."""
+    """Recommend endpoint — coming in Day 7."""
     return jsonify({
         "success": True,
         "message": "Recommend endpoint — coming soon (Day 7)"
     }), 200
 
 
-# --- Placeholder: /generate-report route ---
+# --- /generate-report route (placeholder) ---
 @app.route("/generate-report", methods=["POST"])
+@sanitise_request
 def generate_report():
-    """Report generation endpoint — will be implemented in Day 12."""
+    """Report generation endpoint — coming in Day 12."""
     return jsonify({
         "success": True,
         "message": "Generate report endpoint — coming soon (Day 12)"
@@ -119,8 +110,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("SentinelIQ AI Service — Starting...")
     print("Author: Poshitha A Kundar (AI Developer 1)")
-    print("Project: Tool-75 — AI Assistant with RAG")
-    print("Day 2: Groq LLaMA-3.3-70b integration active")
+    print("Day 3: Input sanitisation active")
     print("Port: 5000")
     print("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
