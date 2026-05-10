@@ -95,6 +95,7 @@ def describe():
     Returns AI-generated risk description.
     """
     from services.groq_client import get_groq_client
+    from services.prompt_loader import get_prompt_loader
 
     data = request.get_json()
     user_input = data.get("input") or data.get("query") or data.get("message")
@@ -102,13 +103,9 @@ def describe():
     if not user_input:
         return jsonify({"success": False, "error": "No input provided"}), 400
 
-    system_prompt = """You are SentinelIQ, an AI assistant specialized in operational risk analysis.
-When given a risk event or scenario, provide:
-1. A clear description of the risk
-2. The potential impact (financial, operational, reputational)
-3. The likelihood assessment (High/Medium/Low)
-4. Which risk category it falls under (Credit, Market, Operational, Compliance)
-Be concise but thorough. Use professional language suitable for risk reports."""
+    # Load prompt from file
+    prompt_loader = get_prompt_loader()
+    system_prompt = prompt_loader.get_prompt("describe_prompt")
 
     try:
         client = get_groq_client()
