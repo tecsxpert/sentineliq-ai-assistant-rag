@@ -245,7 +245,7 @@ Our team built an AI powered web application using Spring Boot (Java backend), F
 | Kavana S | Java Developer 1 | Pending |
 | Ganashree B S | Java Developer 2 | Pending |
 | Syed Abdul Rahaman | Java Developer 3 | Pending |
-| Poshitha A Kundar | AI Developer 1 | Pending |
+| Poshitha A Kundar | AI Developer 1 | ✅ Signed — 10 May 2026 |
 | SHRIVAS SHRIPAD NADIGER | AI Developer 2 | Pending |
 | Vinod R | Security Reviewer | Pending |
 
