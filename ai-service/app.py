@@ -1,100 +1,90 @@
 # app.py — Flask AI Service Entry Point
-# Author: Kushal V R (AI Developer 3)
-# Day 8 — Fixed ALL ZAP findings completely
+# Author: Poshitha A Kundar (AI Developer 1)
+# Project: Tool-75 — SentinelIQ AI Assistant with RAG
+# Day 1 — Project Setup & Flask Skeleton
 
 from flask import Flask, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_talisman import Talisman
-from middleware.sanitiser import sanitise_request
 
 # --- Create Flask app ---
 app = Flask(__name__)
 
-# --- Setup Security Headers using flask-talisman ---
-# Fix 1: CSP header with proper fallback directives
-# Fix 2: X-Content-Type-Options
-Talisman(
-    app,
-    force_https=False,
-    strict_transport_security=False,
-    content_security_policy={
-        'default-src': ["'self'"],
-        'script-src': ["'self'"],
-        'style-src': ["'self'"],
-        'img-src': ["'self'"],
-        'font-src': ["'self'"],
-        'connect-src': ["'self'"],
-        'frame-ancestors': ["'none'"],
-    },
-    x_content_type_options=True,
-    referrer_policy='strict-origin-when-cross-origin'
-)
-
-# --- Fix 3: Hide server version + add X-Frame-Options ---
-@app.after_request
-def add_security_headers(response):
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['Server'] = 'AI-Service'  # hides Werkzeug/Python version
-    return response
-
-# --- Setup Rate Limiter ---
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["30 per minute"],
-    headers_enabled=True
-)
-
-# --- Custom error handler for 429 ---
-@app.errorhandler(429)
-def rate_limit_exceeded(e):
-    return jsonify({
-        "success": False,
-        "error": "Too many requests. Please slow down.",
-        "retry_after": str(e.description)
-    }), 429
 
 # --- Health check route ---
 @app.route("/health", methods=["GET"])
 def health():
+    """
+    Health check endpoint.
+    Returns 200 if the AI service is running properly.
+    Used by Docker, load balancers, and monitoring tools.
+    """
     return jsonify({
         "success": True,
         "message": "AI service is running",
-        "status": "healthy"
+        "status": "healthy",
+        "version": "1.0.0",
+        "author": "Poshitha A Kundar (AI Developer 1)"
     }), 200
 
-# --- /describe route ---
+
+# --- Root route ---
+@app.route("/", methods=["GET"])
+def root():
+    """
+    Root endpoint — returns service info.
+    """
+    return jsonify({
+        "service": "SentinelIQ AI Assistant",
+        "project": "Tool-75 — AI Assistant with RAG",
+        "endpoints": ["/health", "/describe", "/recommend", "/generate-report"],
+        "status": "active"
+    }), 200
+
+
+# --- Placeholder: /describe route ---
 @app.route("/describe", methods=["POST"])
-@sanitise_request
 def describe():
+    """
+    Describe endpoint — will be connected to Groq API in Day 2.
+    Takes user input and returns AI-generated risk description.
+    """
     return jsonify({
         "success": True,
-        "message": "Describe endpoint — coming soon"
+        "message": "Describe endpoint — coming soon (Day 2)"
     }), 200
 
-# --- /recommend route ---
+
+# --- Placeholder: /recommend route ---
 @app.route("/recommend", methods=["POST"])
-@sanitise_request
 def recommend():
+    """
+    Recommend endpoint — will use RAG pipeline in Day 7.
+    Takes user input and returns AI-generated recommendations.
+    """
     return jsonify({
         "success": True,
-        "message": "Recommend endpoint — coming soon"
+        "message": "Recommend endpoint — coming soon (Day 7)"
     }), 200
 
-# --- /generate-report route ---
+
+# --- Placeholder: /generate-report route ---
 @app.route("/generate-report", methods=["POST"])
-@limiter.limit("10 per minute")
-@sanitise_request
 def generate_report():
+    """
+    Report generation endpoint — will be implemented in Day 12.
+    Takes user input and generates a full risk report.
+    """
     return jsonify({
         "success": True,
-        "message": "Generate report endpoint — coming soon"
+        "message": "Generate report endpoint — coming soon (Day 12)"
     }), 200
+
 
 # --- Run the app ---
 if __name__ == "__main__":
-    print("Starting AI Service on port 5000...")
-    print("Rate limiting: 30 req/min default, 10 req/min on /generate-report")
-    print("Security headers: ALL ZAP findings fixed!")
+    print("=" * 60)
+    print("SentinelIQ AI Service — Starting...")
+    print("Author: Poshitha A Kundar (AI Developer 1)")
+    print("Project: Tool-75 — AI Assistant with RAG")
+    print("Port: 5000")
+    print("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
