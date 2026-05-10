@@ -1,17 +1,64 @@
 # app.py — Flask AI Service Entry Point
 # Author: Poshitha A Kundar (AI Developer 1)
 # Project: Tool-75 — SentinelIQ AI Assistant with RAG
-# Day 3 — Added input sanitisation middleware
+# Day 4 — Added Rate Limiting & Security Headers
 
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 from middleware.sanitiser import sanitise_request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 
 # Load environment variables
 load_dotenv()
 
 # --- Create Flask app ---
 app = Flask(__name__)
+
+# --- Setup Security Headers using flask-talisman ---
+# CSP header with proper fallback directives
+# X-Content-Type-Options
+Talisman(
+    app,
+    force_https=False, # Set to True in production with HTTPS
+    strict_transport_security=False,
+    content_security_policy={
+        'default-src': ["'self'"],
+        'script-src': ["'self'"],
+        'style-src': ["'self'"],
+        'img-src': ["'self'"],
+        'font-src': ["'self'"],
+        'connect-src': ["'self'"],
+        'frame-ancestors': ["'none'"],
+    },
+    x_content_type_options=True,
+    referrer_policy='strict-origin-when-cross-origin'
+)
+
+# --- Hide server version + add X-Frame-Options ---
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Server'] = 'AI-Service'  # hides Werkzeug/Python version
+    return response
+
+# --- Setup Rate Limiter ---
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["30 per minute"],
+    headers_enabled=True
+)
+
+# --- Custom error handler for 429 ---
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
+    return jsonify({
+        "success": False,
+        "error": "Too many requests. Please slow down.",
+        "retry_after": str(e.description)
+    }), 429
 
 
 # --- Health check route ---
@@ -96,9 +143,10 @@ def recommend():
 
 # --- /generate-report route (placeholder) ---
 @app.route("/generate-report", methods=["POST"])
+@limiter.limit("10 per minute")
 @sanitise_request
 def generate_report():
-    """Report generation endpoint — coming in Day 12."""
+    """Report generation endpoint — coming in Day 12. Strict rate limit 10/min."""
     return jsonify({
         "success": True,
         "message": "Generate report endpoint — coming soon (Day 12)"
@@ -110,7 +158,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("SentinelIQ AI Service — Starting...")
     print("Author: Poshitha A Kundar (AI Developer 1)")
-    print("Day 3: Input sanitisation active")
+    print("Day 4: Rate Limiting & Security Headers active")
     print("Port: 5000")
     print("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
