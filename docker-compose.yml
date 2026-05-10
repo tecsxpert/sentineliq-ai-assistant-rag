@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: sentineliq-ai-service
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    volumes:
+      - chroma_data:/app/chroma_data
+    networks:
+      - sentineliq_network
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    name: sentineliq_chroma_data
+
+networks:
+  sentineliq_network:
+    name: sentineliq_internal_network
+    driver: bridge
