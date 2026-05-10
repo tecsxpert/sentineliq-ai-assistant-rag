@@ -86,16 +86,14 @@ def root():
     }), 200
 
 
-# --- /describe route — Groq API + Sanitisation ---
+# --- /describe route — RAG Pipeline ---
 @app.route("/describe", methods=["POST"])
 @sanitise_request
 def describe():
     """
-    Describe endpoint — sanitised input sent to Groq LLaMA-3.3-70b.
-    Returns AI-generated risk description.
+    Describe endpoint — uses RAG pipeline to generate context-aware risk description.
     """
-    from services.groq_client import get_groq_client
-    from services.prompt_loader import get_prompt_loader
+    from services.rag_pipeline import get_rag_pipeline
 
     data = request.get_json()
     user_input = data.get("input") or data.get("query") or data.get("message")
@@ -103,14 +101,10 @@ def describe():
     if not user_input:
         return jsonify({"success": False, "error": "No input provided"}), 400
 
-    # Load prompt from file
-    prompt_loader = get_prompt_loader()
-    system_prompt = prompt_loader.get_prompt("describe_prompt")
-
     try:
-        client = get_groq_client()
-        result = client.generate_response(
-            system_prompt=system_prompt,
+        pipeline = get_rag_pipeline()
+        result = pipeline.generate_response(
+            prompt_name="describe_prompt",
             user_input=user_input
         )
 
@@ -127,15 +121,39 @@ def describe():
         return jsonify({"success": False, "error": f"Service error: {str(e)}"}), 500
 
 
-# --- /recommend route (placeholder) ---
+# --- /recommend route — RAG Pipeline ---
 @app.route("/recommend", methods=["POST"])
 @sanitise_request
 def recommend():
-    """Recommend endpoint — coming in Day 7."""
-    return jsonify({
-        "success": True,
-        "message": "Recommend endpoint — coming soon (Day 7)"
-    }), 200
+    """
+    Recommend endpoint — uses RAG pipeline to generate context-aware risk recommendations.
+    """
+    from services.rag_pipeline import get_rag_pipeline
+
+    data = request.get_json()
+    user_input = data.get("input") or data.get("query") or data.get("message")
+
+    if not user_input:
+        return jsonify({"success": False, "error": "No input provided"}), 400
+
+    try:
+        pipeline = get_rag_pipeline()
+        result = pipeline.generate_response(
+            prompt_name="recommend_prompt",
+            user_input=user_input
+        )
+
+        if result["success"]:
+            return jsonify({
+                "success": True,
+                "recommendations": result["response"],
+                "tokens_used": result["tokens_used"]
+            }), 200
+        else:
+            return jsonify({"success": False, "error": result["error"]}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Service error: {str(e)}"}), 500
 
 
 # --- /generate-report route (placeholder) ---
@@ -186,7 +204,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("SentinelIQ AI Service — Starting...")
     print("Author: Poshitha A Kundar (AI Developer 1)")
-    print("Day 6: ChromaDB Vector Store Setup active")
+    print("Day 7: RAG Pipeline Integration active")
     print("Port: 5000")
     print("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
