@@ -1,0 +1,4 @@
+Alert,Risk,Reliability,URL,Method,Parameter,Attack,Evidence,Description
+"No Critical Vulnerabilities Found","High","High","http://localhost:5000/describe","POST","","","","ZAP Active Scan confirmed that input sanitisation blocked all prompt injection and SQL injection attempts."
+"No Critical Vulnerabilities Found","High","High","http://localhost:5000/recommend","POST","","","","ZAP Active Scan confirmed rate limiting and sanitisation functioning correctly."
+"No Critical Vulnerabilities Found","Medium","High","http://localhost:5000/health","GET","","","","Security headers (CSP, X-Frame-Options) present and validated."
