@@ -9,6 +9,16 @@ from middleware.sanitiser import sanitise_request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+import logging
+import time
+
+# --- Setup Logging ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -224,12 +234,24 @@ def index_document():
         return jsonify({"success": False, "error": f"Indexing error: {str(e)}"}), 500
 
 
+# --- Setup Request Logging ---
+@app.before_request
+def start_timer():
+    request.start_time = time.time()
+
+@app.after_request
+def log_request(response):
+    if hasattr(request, 'start_time'):
+        duration = time.time() - request.start_time
+        logger.info(f"Method: {request.method} Path: {request.path} Status: {response.status_code} Duration: {duration:.4f}s")
+    return response
+
 # --- Run the app ---
 if __name__ == "__main__":
-    print("=" * 60)
-    print("SentinelIQ AI Service — Starting...")
-    print("Author: Poshitha A Kundar (AI Developer 1)")
-    print("Day 12: Report Generation Endpoint active")
-    print("Port: 5000")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("SentinelIQ AI Service — Starting...")
+    logger.info("Author: Poshitha A Kundar (AI Developer 1)")
+    logger.info("Day 17: Logging & Monitoring active")
+    logger.info("Port: 5000")
+    logger.info("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
