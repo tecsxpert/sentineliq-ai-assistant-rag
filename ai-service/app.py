@@ -81,7 +81,7 @@ def root():
     return jsonify({
         "service": "SentinelIQ AI Assistant",
         "project": "Tool-75 — AI Assistant with RAG",
-        "endpoints": ["/health", "/describe", "/recommend", "/generate-report"],
+        "endpoints": ["/health", "/describe", "/recommend", "/generate-report", "/index"],
         "status": "active"
     }), 200
 
@@ -150,12 +150,43 @@ def generate_report():
     }), 200
 
 
+# --- /index route — ChromaDB Document Addition ---
+@app.route("/index", methods=["POST"])
+@sanitise_request
+def index_document():
+    """
+    Index endpoint — adds a document to the vector store.
+    Request body: {"id": "doc1", "text": "Risk policy...", "metadata": {"category": "policy"}}
+    """
+    from services.vector_store import get_vector_store
+    
+    data = request.get_json()
+    doc_id = data.get("id")
+    text = data.get("text") or data.get("input")  # fallback to sanitised input
+    metadata = data.get("metadata", {})
+    
+    if not doc_id or not text:
+        return jsonify({"success": False, "error": "Both 'id' and 'text' are required"}), 400
+        
+    try:
+        vector_store = get_vector_store()
+        vector_store.add_document(doc_id=doc_id, text=text, metadata=metadata)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Document '{doc_id}' successfully indexed in ChromaDB"
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Indexing error: {str(e)}"}), 500
+
+
 # --- Run the app ---
 if __name__ == "__main__":
     print("=" * 60)
     print("SentinelIQ AI Service — Starting...")
     print("Author: Poshitha A Kundar (AI Developer 1)")
-    print("Day 4: Rate Limiting & Security Headers active")
+    print("Day 6: ChromaDB Vector Store Setup active")
     print("Port: 5000")
     print("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
