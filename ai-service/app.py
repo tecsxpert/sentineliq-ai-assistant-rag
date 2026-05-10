@@ -156,16 +156,41 @@ def recommend():
         return jsonify({"success": False, "error": f"Service error: {str(e)}"}), 500
 
 
-# --- /generate-report route (placeholder) ---
+# --- /generate-report route — RAG Pipeline ---
 @app.route("/generate-report", methods=["POST"])
 @limiter.limit("10 per minute")
 @sanitise_request
 def generate_report():
-    """Report generation endpoint — coming in Day 12. Strict rate limit 10/min."""
-    return jsonify({
-        "success": True,
-        "message": "Generate report endpoint — coming soon (Day 12)"
-    }), 200
+    """
+    Report generation endpoint — uses RAG pipeline to create a full risk report.
+    Strict rate limit 10/min.
+    """
+    from services.rag_pipeline import get_rag_pipeline
+
+    data = request.get_json()
+    user_input = data.get("input") or data.get("query") or data.get("message")
+
+    if not user_input:
+        return jsonify({"success": False, "error": "No input provided"}), 400
+
+    try:
+        pipeline = get_rag_pipeline()
+        result = pipeline.generate_response(
+            prompt_name="report_prompt",
+            user_input=user_input
+        )
+
+        if result["success"]:
+            return jsonify({
+                "success": True,
+                "report": result["response"],
+                "tokens_used": result["tokens_used"]
+            }), 200
+        else:
+            return jsonify({"success": False, "error": result["error"]}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Service error: {str(e)}"}), 500
 
 
 # --- /index route — ChromaDB Document Addition ---
@@ -204,7 +229,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("SentinelIQ AI Service — Starting...")
     print("Author: Poshitha A Kundar (AI Developer 1)")
-    print("Day 10: Security Verification & Testing active")
+    print("Day 12: Report Generation Endpoint active")
     print("Port: 5000")
     print("=" * 60)
     app.run(host="0.0.0.0", port=5000, debug=True)
